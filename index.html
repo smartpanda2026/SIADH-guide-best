@@ -1,0 +1,2682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIADH Algorithm · Furst-Guided Management</title>
+<style>
+:root {
+  --navy: #0b2a4a;
+  --blue: #1b4a7a;
+  --blue-mid: #4a7db5;
+  --blue-light: #e8f0fa;
+  --border: #d9e2ef;
+  --text: #1a2b3c;
+  --muted: #4a6480;
+  --green: #2e7d32;
+  --green-bg: #e6f4ea;
+  --yellow: #b8860b;
+  --yellow-bg: #fff8e1;
+  --red: #c62828;
+  --red-bg: #fce8e8;
+  --purple: #6a3d9a;
+  --purple-bg: #f3ecfb;
+  --teal: #0d7a7a;
+  --teal-bg: #e0f4f4;
+  --radius: 1rem;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: #eef3f9;
+  color: var(--text);
+  line-height: 1.55;
+  padding: 1.5rem;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.app {
+  max-width: 1080px;
+  width: 100%;
+  background: #fff;
+  border-radius: 1.75rem;
+  box-shadow: 0 24px 48px -16px rgba(0, 25, 55, 0.28);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+header {
+  background: linear-gradient(135deg, #08213c 0%, #17467a 100%);
+  color: #fff;
+  padding: 1.75rem 2rem 1.5rem;
+}
+
+header h1 {
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+header h1 .pill {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 100px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.2rem 0.75rem;
+  margin-left: 0.6rem;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+header p {
+  font-size: 0.92rem;
+  opacity: 0.82;
+  margin-top: 0.5rem;
+  max-width: 720px;
+}
+
+.unit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  flex-wrap: wrap;
+}
+
+.unit-bar .unit-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.unit-switch {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 100px;
+  padding: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.unit-switch button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 0.35rem 0.85rem;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.unit-switch button:hover { color: #fff; }
+
+.unit-switch button.active {
+  background: #fff;
+  color: var(--navy);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.unit-note {
+  font-size: 0.72rem;
+  opacity: 0.6;
+  font-style: italic;
+  margin-left: 0.4rem;
+}
+
+.tabs {
+  display: flex;
+  background: #f5f9fe;
+  border-bottom: 1px solid var(--border);
+  padding: 0 1rem;
+  gap: 0.25rem;
+  overflow-x: auto;
+}
+
+.tab {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.9rem 1.1rem;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover { color: var(--blue); }
+.tab.active { color: var(--navy); border-bottom-color: var(--blue); }
+
+.tab-panel { display: none; padding: 1.75rem 2rem 2rem; }
+.tab-panel.active { display: block; }
+
+.sec-title {
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: var(--navy);
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sec-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+
+.trail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+  min-height: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--blue-light);
+  border: 1px solid #cbdcf0;
+  color: var(--blue);
+  border-radius: 100px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.chip .dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--blue-mid);
+  flex-shrink: 0;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: 0 4px 14px rgba(10, 40, 80, 0.04);
+}
+
+.card + .card { margin-top: 1rem; }
+
+.step-badge {
+  display: inline-block;
+  background: var(--navy);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 0.2rem 0.65rem;
+  border-radius: 100px;
+  margin-bottom: 0.7rem;
+}
+
+.step-title {
+  font-size: 1.08rem;
+  font-weight: 650;
+  color: var(--navy);
+  margin-bottom: 0.3rem;
+}
+
+.step-desc {
+  font-size: 0.88rem;
+  color: #3d5a78;
+  margin-bottom: 1.1rem;
+}
+
+.field { margin-bottom: 0.9rem; }
+
+.field label.lbl {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #1f3b5c;
+  margin-bottom: 0.35rem;
+}
+
+.field input[type="number"] {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid #ccdae9;
+  border-radius: 0.7rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field input[type="number"]:focus,
+.field input[type="number"]:focus-visible {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(27, 74, 122, 0.18);
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--red);
+  background: #fff8f8;
+}
+
+.field .hint {
+  font-size: 0.74rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.field .err {
+  font-size: 0.78rem;
+  color: var(--red);
+  margin-top: 0.25rem;
+  display: none;
+}
+.field.invalid .err { display: block; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.9rem; }
+
+.opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 0.8rem 0.95rem;
+  margin-bottom: 0.55rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 0.9rem;
+}
+
+.opt:hover { border-color: #a9c6e4; background: #f7fbff; }
+.opt:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(27,74,122,0.12); }
+
+.opt input {
+  margin-top: 0.2rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--blue);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.opt.selected { border-color: var(--blue); background: var(--blue-light); }
+.opt .opt-label strong { color: var(--navy); display: block; }
+.opt .opt-label span { font-size: 0.8rem; color: #4d6278; }
+
+.btn {
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 650;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.4rem;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, transform 0.1s, border-color 0.15s;
+}
+
+.btn:focus-visible { outline: 3px solid #7fb0e0; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn:active { transform: scale(0.985); }
+}
+
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: var(--navy); }
+
+.btn-ghost {
+  background: #fff;
+  color: var(--blue);
+  border: 1.5px solid #b8cde2;
+}
+.btn-ghost:hover { background: var(--blue-light); }
+
+.btn-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 1.1rem;
+}
+
+.outcome {
+  border-radius: var(--radius);
+  padding: 1.25rem 1.4rem;
+  border-left: 6px solid;
+  font-size: 0.92rem;
+}
+
+.outcome h4 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.4rem; }
+.outcome.green { background: var(--green-bg); border-color: var(--green); color: #17471b; }
+.outcome.yellow { background: var(--yellow-bg); border-color: var(--yellow); color: #6b5100; }
+.outcome.red { background: var(--red-bg); border-color: var(--red); color: #7d1616; }
+.outcome.blue { background: var(--blue-light); border-color: var(--blue); color: #12395e; }
+
+.ratio-wrap { text-align: center; padding: 1.1rem 0 0.6rem; }
+
+.ratio-num {
+  font-size: 3.4rem;
+  font-weight: 750;
+  color: var(--navy);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.ratio-cap {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.ratio-formula { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+
+.formula-footnote {
+  font-size: 0.74rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.4rem;
+  font-style: italic;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---- Fluid restriction target box ---- */
+.fluid-box {
+  margin-top: 1.2rem;
+  background: linear-gradient(135deg, #e0f4f4 0%, #f0fafa 100%);
+  border: 2px solid var(--teal);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.4rem;
+  box-shadow: 0 4px 14px rgba(13, 122, 122, 0.08);
+}
+
+.fluid-box .fb-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px dashed rgba(13, 122, 122, 0.35);
+}
+
+.fluid-box .fb-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.fluid-box .fb-title {
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.fluid-box .fb-primary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.fluid-box .fb-target {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.fluid-box .fb-target small {
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--blue);
+  letter-spacing: 0;
+}
+
+.fluid-box .fb-target-label {
+  font-size: 0.85rem;
+  color: #2d4a68;
+  font-weight: 600;
+}
+
+.fluid-box .fb-desc {
+  font-size: 0.86rem;
+  color: #1f3b5c;
+  margin-bottom: 0.7rem;
+}
+
+.fluid-box .fb-band-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 0.6rem 0 0.8rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.fluid-box .fb-band-table th {
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  background: rgba(13, 122, 122, 0.14);
+  color: var(--teal);
+  font-weight: 750;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.fluid-box .fb-band-table td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid rgba(13, 122, 122, 0.12);
+  color: #1f3b5c;
+  vertical-align: top;
+}
+
+.fluid-box .fb-band-table tr:last-child td { border-bottom: none; }
+
+.fluid-box .fb-band-table tr.active-band {
+  background: rgba(13, 122, 122, 0.16);
+}
+
+.fluid-box .fb-band-table tr.active-band td {
+  font-weight: 650;
+  color: var(--navy);
+}
+
+.fluid-box .fb-rule {
+  background: rgba(255, 255, 255, 0.75);
+  border-left: 4px solid var(--teal);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.83rem;
+  color: #1f3b5c;
+  margin-top: 0.6rem;
+}
+
+.fluid-box .fb-rule strong { color: var(--navy); }
+
+.fluid-box .fb-note {
+  font-size: 0.78rem;
+  color: #4a6480;
+  font-style: italic;
+  margin-top: 0.6rem;
+  line-height: 1.5;
+}
+
+/* ---- Interactive urine volume calculator ---- */
+.uv-calc {
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(13, 122, 122, 0.4);
+  border-radius: 0.75rem;
+  padding: 0.95rem 1.1rem;
+}
+
+.uv-calc .uv-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 0.7rem;
+}
+
+.uv-calc .uv-title .uv-badge {
+  background: var(--teal);
+  color: #fff;
+  font-size: 0.6rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 100px;
+  letter-spacing: 0.4px;
+}
+
+.uv-calc .uv-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+}
+
+.uv-calc .uv-input-row label {
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #1f3b5c;
+  flex-shrink: 0;
+}
+
+.uv-calc .uv-input-row input {
+  flex: 1 1 140px;
+  min-width: 120px;
+  padding: 0.55rem 0.8rem;
+  border: 1.5px solid #b8d8d8;
+  border-radius: 0.6rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.uv-calc .uv-input-row input:focus,
+.uv-calc .uv-input-row input:focus-visible {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(13, 122, 122, 0.18);
+}
+
+.uv-calc .uv-input-row .uv-unit {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.uv-calc .uv-result {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  padding: 0.7rem 0.85rem;
+  background: rgba(13, 122, 122, 0.08);
+  border-radius: 0.55rem;
+  border-left: 4px solid var(--teal);
+  min-height: 2.4rem;
+}
+
+.uv-calc .uv-result .uv-result-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--navy);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.uv-calc .uv-result .uv-result-value small {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--blue);
+  letter-spacing: 0;
+}
+
+.uv-calc .uv-result .uv-result-label {
+  font-size: 0.82rem;
+  color: #2d4a68;
+  font-weight: 600;
+}
+
+.uv-calc .uv-result.placeholder .uv-result-value {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.uv-calc .uv-result.warn {
+  background: rgba(198, 40, 40, 0.08);
+  border-left-color: var(--red);
+}
+
+.uv-calc .uv-result.warn .uv-result-value { color: var(--red); }
+
+.uv-calc .uv-formula {
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 0.5rem;
+  text-align: right;
+}
+
+.uv-compare {
+  margin-top: 0.8rem;
+  border-top: 1px dashed rgba(13, 122, 122, 0.3);
+  padding-top: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.uv-compare .uv-compare-col {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 0.55rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(13, 122, 122, 0.2);
+}
+
+.uv-compare .uv-compare-col.active-col {
+  background: rgba(13, 122, 122, 0.14);
+  border-color: var(--teal);
+}
+
+.uv-compare .uv-compare-label {
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 0.3rem;
+}
+
+.uv-compare .uv-compare-value {
+  font-size: 1.15rem;
+  font-weight: 750;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
+.uv-compare .uv-compare-value small {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--blue);
+}
+
+.uv-compare .uv-compare-note {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.2rem;
+  font-style: italic;
+}
+
+.uv-discordance {
+  margin-top: 0.7rem;
+  background: rgba(184, 134, 11, 0.12);
+  border-left: 4px solid var(--yellow);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.8rem;
+  color: #5e4a00;
+}
+
+.uv-discordance strong { color: #6b5100; }
+
+/* ---- Urea vs Empagliflozin comparison box ---- */
+.compare-box {
+  margin-top: 1.2rem;
+  background: linear-gradient(135deg, #f3ecfb 0%, #faf6ff 100%);
+  border: 2px solid var(--purple);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.4rem;
+  box-shadow: 0 4px 14px rgba(106, 61, 154, 0.08);
+}
+
+.compare-box .cb-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px dashed rgba(106, 61, 154, 0.35);
+}
+
+.compare-box .cb-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.compare-box .cb-title {
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--purple);
+}
+
+.compare-box .cb-caveat {
+  background: rgba(255, 255, 255, 0.75);
+  border-left: 4px solid var(--purple);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.83rem;
+  color: #3d1e63;
+  margin-bottom: 0.9rem;
+}
+
+.compare-box .cb-caveat strong { color: var(--purple); }
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 0.55rem;
+  overflow: hidden;
+}
+
+.compare-table th {
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  background: rgba(106, 61, 154, 0.14);
+  color: var(--purple);
+  font-weight: 750;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.compare-table th:first-child {
+  width: 22%;
+  color: var(--muted);
+  background: rgba(106, 61, 154, 0.08);
+}
+
+.compare-table td {
+  padding: 0.7rem 0.7rem;
+  border-bottom: 1px solid rgba(106, 61, 154, 0.14);
+  color: #1f3b5c;
+  vertical-align: top;
+}
+
+.compare-table tr:last-child td { border-bottom: none; }
+
+.compare-table td:first-child {
+  font-weight: 700;
+  color: var(--navy);
+  background: rgba(106, 61, 154, 0.06);
+  font-size: 0.78rem;
+}
+
+.compare-table .col-empag { background: rgba(13, 122, 122, 0.05); }
+.compare-table .col-urea { background: rgba(184, 134, 11, 0.05); }
+
+.compare-box .cb-framework {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 0.6rem;
+  padding: 0.85rem 1rem;
+  margin-top: 0.9rem;
+  border: 1px solid rgba(106, 61, 154, 0.25);
+}
+
+.compare-box .cb-framework-title {
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 0.5rem;
+}
+
+.compare-box .cb-framework ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.compare-box .cb-framework li {
+  font-size: 0.83rem;
+  color: #1f3b5c;
+  padding-left: 1.4rem;
+  position: relative;
+  line-height: 1.5;
+}
+
+.compare-box .cb-framework li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--purple);
+  font-weight: 700;
+}
+
+.compare-box .cb-framework li strong { color: var(--purple); }
+
+.compare-box .cb-footnote {
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 0.7rem;
+  line-height: 1.5;
+}
+
+.target-box {
+  margin-top: 1.1rem;
+  background: #f2f8ff;
+  border: 1px dashed #a9c6e4;
+  border-radius: 0.85rem;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.target-box .t-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+
+.target-box .t-value {
+  font-size: 1.5rem;
+  font-weight: 750;
+  color: var(--blue);
+  line-height: 1.2;
+}
+
+table.drug {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  margin-top: 0.5rem;
+}
+
+table.drug th {
+  text-align: left;
+  padding: 0.6rem 0.6rem;
+  background: #eaf1fa;
+  color: var(--navy);
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #c5d8ed;
+}
+
+table.drug td {
+  padding: 0.8rem 0.6rem;
+  border-bottom: 1px solid #e4ecf5;
+  vertical-align: top;
+}
+
+table.drug tr:last-child td { border-bottom: none; }
+
+.drug-name { font-weight: 700; color: var(--navy); display: block; }
+.drug-class { font-size: 0.72rem; color: var(--muted); }
+.dose { font-weight: 600; color: #24466b; }
+
+.tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 100px;
+  margin-top: 0.3rem;
+}
+.tag.first { background: #d8ecd9; color: #1f5c22; }
+.tag.second { background: #ffe7c2; color: #8a5a00; }
+.tag.caution { background: #fbdada; color: #8b1a1a; }
+.tag.emerging { background: #e5d6f4; color: #4b2378; }
+.tag.adjunct { background: #d5e8f5; color: #1a4a72; }
+.tag.rct { background: #d0e8e8; color: #0d5c5c; }
+
+.note {
+  font-size: 0.85rem;
+  background: var(--blue-light);
+  border-radius: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  color: #1f3b5c;
+  margin-top: 1rem;
+}
+
+.note strong { color: var(--navy); }
+
+.note.evidence {
+  background: #fff8e1;
+  border-left: 5px solid #e6a700;
+  color: #5e4a00;
+}
+
+.note.warning {
+  background: #fce8e8;
+  border-left: 5px solid #c62828;
+  color: #7d1616;
+}
+
+.note.emerging-note {
+  background: var(--purple-bg);
+  border-left: 5px solid var(--purple);
+  color: #3d1e63;
+}
+
+ul.plain {
+  padding-left: 1.15rem;
+  font-size: 0.87rem;
+  color: #2d4a68;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+footer {
+  padding: 1.1rem 2rem;
+  background: #f2f6fb;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem;
+  color: #6b7f94;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.util-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+.util-bar .btn { font-size: 0.78rem; padding: 0.45rem 0.9rem; }
+
+.subtabs {
+  display: flex;
+  gap: 0.3rem;
+  margin: 0.6rem 0 1.2rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.subtab {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.6rem 0.95rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.subtab:hover { color: var(--blue); }
+.subtab.active { color: var(--navy); border-bottom-color: var(--blue); }
+
+.subpanel { display: none; }
+.subpanel.active { display: block; }
+
+@media (max-width: 760px) {
+  body { padding: 0.7rem; }
+  header { padding: 1.3rem 1.3rem 1.1rem; }
+  header h1 { font-size: 1.3rem; }
+  .tab-panel { padding: 1.3rem 1.2rem 1.6rem; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .ratio-num { font-size: 2.7rem; }
+  .tabs { padding: 0 0.4rem; }
+  .tab { padding: 0.8rem 0.7rem; font-size: 0.8rem; }
+  .unit-bar { justify-content: flex-start; }
+  .fluid-box .fb-target { font-size: 1.9rem; }
+  .uv-compare { grid-template-columns: 1fr; }
+  .compare-table { font-size: 0.76rem; }
+  .compare-table td, .compare-table th { padding: 0.5rem 0.55rem; }
+}
+
+@media print {
+  body { background: #fff; padding: 0; }
+  .app { box-shadow: none; border-radius: 0; border: none; }
+  .tabs, .subtabs, .btn-row, .util-bar, .unit-bar, footer { display: none !important; }
+  .tab-panel { display: block !important; page-break-inside: avoid; }
+  .tab-panel:not(.active) { display: none !important; }
+  .subpanel { display: block !important; }
+  .fluid-box, .compare-box { break-inside: avoid; }
+  .uv-calc .uv-input-row input { border: 1px solid #999; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <h1>SIADH Algorithm <span class="pill">Furst-guided</span></h1>
+  <p>Stepwise diagnostic and management algorithms for the syndrome of inappropriate antidiuresis, with the Furst U/P electrolyte ratio to predict fluid-restriction response and set the restriction target. Updated with contemporary 2025–2026 evidence, including the NEJM 2023 review.</p>
+
+  <div class="unit-bar" role="group" aria-label="Unit system">
+    <span class="unit-label">Units</span>
+    <div class="unit-switch" role="radiogroup" aria-label="Unit system">
+      <button type="button" data-unit="si" class="active" role="radio" aria-checked="true">SI (mmol/L)</button>
+      <button type="button" data-unit="us" role="radio" aria-checked="false">US (mEq/L)</button>
+    </div>
+    <span class="unit-note" id="unit-note">Electrolytes in mmol/L · osmolality in mOsm/kg</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="SIADH algorithm sections">
+  <button class="tab active" id="tab-btn-diag" role="tab" aria-selected="true" aria-controls="tab-diag" data-tab="diag" tabindex="0">① Diagnostic Algorithm</button>
+  <button class="tab" id="tab-btn-mgmt" role="tab" aria-selected="false" aria-controls="tab-mgmt" data-tab="mgmt" tabindex="-1">② Management Algorithm</button>
+  <button class="tab" id="tab-btn-therapy" role="tab" aria-selected="false" aria-controls="tab-therapy" data-tab="therapy" tabindex="-1">③ Second-line Therapy</button>
+</nav>
+
+<section id="tab-diag" class="tab-panel active" role="tabpanel" aria-labelledby="tab-btn-diag">
+  <div class="util-bar">
+    <button class="btn btn-ghost" id="diag-copy">Copy summary</button>
+    <button class="btn btn-ghost" id="diag-print">Print</button>
+  </div>
+  <div class="sec-title">Diagnostic algorithm</div>
+  <div class="sec-sub">Sequential gates based on the Bartter–Schwartz criteria. Each gate must be passed before proceeding.</div>
+  <div class="trail" id="diag-trail" aria-live="polite"></div>
+  <div id="diag-card" aria-live="polite"></div>
+</section>
+
+<section id="tab-mgmt" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-mgmt">
+  <div class="util-bar">
+    <button class="btn btn-ghost" id="mgmt-copy">Copy summary</button>
+    <button class="btn btn-ghost" id="mgmt-print">Print</button>
+  </div>
+  <div class="sec-title">Management algorithm</div>
+  <div class="sec-sub">Severity triage → Furst ratio → fluid restriction target → 24–48 h reassessment → escalation if needed.</div>
+  <div class="trail" id="mgmt-trail" aria-live="polite"></div>
+  <div id="mgmt-card" aria-live="polite"></div>
+</section>
+
+<section id="tab-therapy" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-therapy">
+  <div class="sec-title">Second-line therapy — when fluid restriction fails</div>
+  <div class="sec-sub">Indicated when Furst ratio &gt; 1.0, urine osmolality &gt; 500 mOsm/kg, urine specific gravity &gt; 1.020, urine Na &gt; 130 mmol/L, or serum Na rises ≤ 3 mmol/L over 48 h on &lt; 1 L/day restriction (Tzoulis definition).</div>
+
+  <div class="note warning" style="margin-top:0; margin-bottom:1rem;">
+    <strong>⚠️ Isotonic (0.9%) saline is not indicated in SIAD</strong><br>
+    In SIAD, the sodium in isotonic saline is excreted while free water is retained — <strong>isotonic saline worsens hyponatremia</strong>. Reserve IV fluids for hypovolemic hyponatremia or use 3% hypertonic saline for severe symptomatic SIAD.
+  </div>
+
+  <div class="subtabs" role="tablist" aria-label="Therapy categories">
+    <button class="subtab active" data-subtab="established" role="tab" aria-selected="true">Established second-line</button>
+    <button class="subtab" data-subtab="emerging" role="tab" aria-selected="false">Emerging options</button>
+    <button class="subtab" data-subtab="refs" role="tab" aria-selected="false">References</button>
+  </div>
+
+  <div class="subpanel active" id="subpanel-established">
+    <table class="drug">
+      <thead>
+        <tr>
+          <th style="width:22%">Agent</th>
+          <th style="width:26%">Dose</th>
+          <th style="width:16%">Onset / half-life</th>
+          <th>Mechanism &amp; cautions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="drug-name">Urea</span>
+            <span class="drug-class">oral osmotic diuretic</span>
+            <span class="tag second">Second-line</span>
+          </td>
+          <td>
+            <span class="dose">15–60 g/day</span><br>
+            <span class="drug-class">Usually 15–30 g/day divided; some use 0.25–0.5 g/kg/day. NEJM case: 15 g BID</span>
+          </td>
+          <td>Onset hours; t½ ~ renal clearance</td>
+          <td>
+            Osmotic diuresis → increased free-water excretion. <strong>~30 g excretes ~1 L water at urine osmolality 500 mOsm/kg.</strong> Mix in water, juice, or broth; give with food (palatability improved by dissolving in juice).<br>
+            <strong>Pros:</strong> cheap, effective, low risk of overcorrection/ODS; effective in nephrogenic SIAD.<br>
+            <strong>Cautions:</strong> GI upset, azotemia, hypernatremia; avoid/caution in severe CKD or hepatic encephalopathy.<br>
+            <strong>Evidence:</strong> observational only — a 2025 meta-analysis (Chander et al.) pooled observational cohorts and reported +9.08 mmol/L, but no RCTs exist. Not directly comparable to empagliflozin RCTs (see Emerging tab).
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="drug-name">Tolvaptan</span>
+            <span class="drug-class">oral V₂-receptor antagonist</span>
+            <span class="tag second">Second-line</span>
+          </td>
+          <td>
+            <span class="dose">7.5–15 mg PO daily</span><br>
+            <span class="drug-class">NEJM/European practice: start 7.5 mg/day. US label: start 15 mg/day. Titrate to 30–60 mg daily</span>
+          </td>
+          <td>Onset 2–4 h; t½ 6–8 h</td>
+          <td>
+            Selective V₂ antagonism → aquaresis (free-water loss without electrolyte loss).<br>
+            <strong>Pros:</strong> rapid, predictable; oral; sustained efficacy over 4 years in SALT-1/SALT-2 follow-up.<br>
+            <strong>Cautions:</strong> overcorrection/ODS, thirst/polyuria, hepatotoxicity, CYP3A4 interactions. <strong>Contraindicated with concomitant hypertonic saline</strong> and in advanced cirrhosis. <strong>Start in hospital</strong>; lift fluid restriction and monitor Na closely to avoid overcorrection.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="drug-name">Conivaptan</span>
+            <span class="drug-class">IV V₂ antagonist</span>
+            <span class="tag second">Second-line</span>
+          </td>
+          <td>
+            <span class="dose">20 mg IV over 30 min</span><br>
+            <span class="drug-class">Then 20–40 mg/24 h continuous infusion</span>
+          </td>
+          <td>Onset &lt; 1 h; t½ 3–5 h</td>
+          <td>
+            Hospitalized euvolemic or hypervolemic hyponatremia.<br>
+            <strong>Cautions:</strong> CYP3A4 interactions, infusion-site reactions, overcorrection. Max 4 days.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="drug-name">Demeclocycline</span>
+            <span class="drug-class">oral tetracycline</span>
+            <span class="tag caution">Rarely used</span>
+          </td>
+          <td>
+            <span class="dose">600–1200 mg/day divided</span>
+          </td>
+          <td>Onset 3–5 days; t½ 10–17 h</td>
+          <td>
+            Inhibits ADH action on the collecting duct.<br>
+            <strong>Cautions:</strong> slow onset, nephrotoxic, photosensitivity. Largely superseded by urea/tolvaptan.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="drug-name">Furosemide + NaCl</span>
+            <span class="drug-class">loop diuretic + solute</span>
+            <span class="tag caution">Weak evidence</span>
+          </td>
+          <td>
+            <span class="dose">Furosemide 20–40 mg daily</span><br>
+            <span class="drug-class">+ NaCl tablets 1–2 g three times daily</span>
+          </td>
+          <td>Onset 30–60 min; t½ 1–2 h</td>
+          <td>
+            Increases solute and free-water excretion — but <strong>an RCT showed no durable benefit over fluid restriction alone and increased AKI and hypokalemia</strong>. Widely used historically; evidence is weak. <strong>Avoid in patients with hypertension.</strong><br>
+            <strong>Cautions:</strong> hypokalemia, hypomagnesemia, volume depletion, AKI. Monitor Na and K every 6–12 h initially.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="drug-name">Increased protein intake</span>
+            <span class="drug-class">dietary adjunct</span>
+            <span class="tag adjunct">Adjunct</span>
+          </td>
+          <td>
+            <span class="dose">~1 g/kg/day</span>
+          </td>
+          <td>Days</td>
+          <td>
+            Mimics urea's osmotic effect by increasing solute load and free-water excretion.<br>
+            <strong>Pros:</strong> low cost, no drug interactions, useful in malnourished or elderly patients.<br>
+            <strong>Cautions:</strong> may be difficult to achieve orally; avoid in advanced CKD where protein restriction is indicated.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subpanel" id="subpanel-emerging">
+    <div class="note emerging-note" style="margin-top:0; margin-bottom:1rem;">
+      <strong>🔬 Emerging therapies</strong><br>
+      Evidence is accumulating but these agents are not yet first- or second-line. Consider after established options fail or are contraindicated, ideally within a clinical trial or specialist setting.
+    </div>
+
+    <table class="drug">
+      <thead>
+        <tr>
+          <th style="width:22%">Agent</th>
+          <th style="width:26%">Dose</th>
+          <th style="width:16%">Evidence level</th>
+          <th>Mechanism &amp; cautions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <span class="drug-name">SGLT2 inhibitors</span>
+            <span class="drug-class">e.g. empagliflozin</span>
+            <span class="tag rct">2 RCTs</span>
+          </td>
+          <td>
+            <span class="dose">Empagliflozin 10–25 mg PO daily</span><br>
+            <span class="drug-class">Dose per diabetes/heart-failure indication; 25 mg/day used in the SIAD crossover trial</span>
+          </td>
+          <td>
+            <strong>Randomized:</strong> 2 RCTs in SIAD (2020 inpatient + 2023 outpatient crossover).<br>
+            <strong>Inpatient (with fluid restriction):</strong> +10 vs +7 mmol/L at day 5.<br>
+            <strong>Outpatient crossover:</strong> +4.1 mmol/L (95% CI 1.7–6.5) sustained at 4 weeks.<br>
+            <em>Refardt et al., JASN 2020 &amp; 2023.</em>
+          </td>
+          <td>
+            Glucosuria-driven osmotic diuresis → increased free-water excretion and plasma sodium.<br>
+            <strong>Pros:</strong> oral, once-daily, familiar safety profile from diabetes/heart-failure use; cardiorenal protective effects independently indicated in comorbid HF, CKD, diabetic/hypertensive nephropathy.<br>
+            <strong>Cautions:</strong> genital mycotic infections, euglycemic DKA, volume depletion, UTI. In the inpatient trial, <strong>transient kidney dysfunction (4 patients) and overcorrection (2 patients)</strong> — warranting close Na monitoring during initiation. Avoid in severe renal impairment (eGFR &lt; 20–25). <strong>Not yet in formal SIAD guidelines.</strong>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="drug-name">Apelin agonists</span>
+            <span class="drug-class">investigational</span>
+            <span class="tag emerging">Preclinical / early</span>
+          </td>
+          <td>
+            <span class="dose">Not established</span>
+          </td>
+          <td>Preclinical and early-phase</td>
+          <td>
+            Modulates vasopressin release and aquaresis via APJ receptor.<br>
+            <strong>Cautions:</strong> investigational only — not for clinical use.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ============================================================
+         NEW: Urea vs Empagliflozin comparison box
+    ============================================================ -->
+    <div class="compare-box">
+      <div class="cb-header">
+        <span class="cb-icon">⚖️</span>
+        <span class="cb-title">Urea vs Empagliflozin — Evidence Comparison</span>
+      </div>
+
+      <div class="cb-caveat">
+        <strong>⚠️ No head-to-head trial exists.</strong> The two agents' efficacy figures are <em>not directly comparable</em>: the urea meta-analysis pooled heterogeneous observational cohorts including many severely hyponatremic inpatients (where Na rises are inherently larger), whereas the empagliflozin crossover trial enrolled relatively mild, stable outpatients (median baseline Na 131 mmol/L).
+      </div>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th class="col-empag">Empagliflozin 25 mg/day</th>
+            <th class="col-urea">Oral urea</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Best evidence</td>
+            <td class="col-empag">2 RCTs: +10 vs +7 mmol/L at day 5 (inpatient, with fluid restriction); +4.1 mmol/L (95% CI 1.7–6.5) at 4 wk (outpatient crossover)</td>
+            <td class="col-urea">Meta-analysis of observational studies only; <strong>no RCTs identified</strong></td>
+          </tr>
+          <tr>
+            <td>Efficacy magnitude</td>
+            <td class="col-empag">~4 mmol/L sustained rise in chronic SIAD; greater response if Na &lt; 130 mmol/L</td>
+            <td class="col-urea">Meta-analysis reports +9.08 mmol/L — but from pooled severe/inpatient cohorts; <strong>not comparable</strong> to the empagliflozin outpatient figure</td>
+          </tr>
+          <tr>
+            <td>Tolerability</td>
+            <td class="col-empag">Well tolerated, no hypoglycemia or hypotension. Class risks: GU infection, euglycemic DKA. Trial signals: <strong>transient kidney dysfunction (4 patients), overcorrection (2 patients)</strong> — monitor Na closely at initiation.</td>
+            <td class="col-urea"><strong>Poor palatability</strong> is the principal limitation (modern flavored formulations mitigate). GI upset, azotemia.</td>
+          </tr>
+          <tr>
+            <td>Cost / access</td>
+            <td class="col-empag">Branded; substantially higher acquisition cost — but may be <strong>offset when cardiorenal protection is independently indicated</strong> (HF, CKD, diabetic/hypertensive nephropathy), common in older SIAD patients</td>
+            <td class="col-urea"><strong>Cheap, widely available</strong>; explicitly described as suitable for resource-limited settings</td>
+          </tr>
+          <tr>
+            <td>Track record</td>
+            <td class="col-empag">Shorter — RCTs published 2020 &amp; 2023</td>
+            <td class="col-urea">Longer observational history; established in clinical practice</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="cb-framework">
+        <div class="cb-framework-title">Practical decision framework</div>
+        <ul>
+          <li><strong>Favor empagliflozin</strong> when cardiorenal comorbidity (HF, CKD, diabetic/hypertensive nephropathy) or palatability concerns dominate — it has the stronger (randomized) evidence base and added cardiorenal benefits.</li>
+          <li><strong>Favor oral urea</strong> when cost or drug access is the constraint — it is cheaper, widely available, and has a longer clinical track record, albeit observational only.</li>
+          <li><strong>Either agent:</strong> monitor serum Na closely during initiation — both work by osmotic diuresis and both can overcorrect.</li>
+          <li><strong>Larger comparative studies are needed</strong> to define relative placement. The NEJM review frames empagliflozin as an emerging option whose effect "warrants further study."</li>
+        </ul>
+      </div>
+
+      <div class="cb-footnote">
+        Sources: Adrogué &amp; Madias NEJM 2023 (review); Refardt et al. JASN 2023 (empagliflozin crossover RCT); Refardt et al. JASN 2020 (empagliflozin inpatient RCT); Chander et al. AJKD 2025 (urea meta-analysis); Monnerat &amp; Refardt Nat Rev Endocrinol 2025; Perelló-Camacho et al. Sci Rep 2022 (urea observational).
+      </div>
+    </div>
+    <!-- ============================================================
+         END comparison box
+    ============================================================ -->
+  </div>
+
+  <div class="subpanel" id="subpanel-refs">
+    <div class="note" style="margin-top:0;">
+      <strong>Key reviews and guidance</strong>
+      <ul class="plain" style="margin-top:0.6rem;">
+        <li><strong>Adrogué &amp; Madias, NEJM 2023</strong> — SIAD pathophysiology and stepwise management algorithm; illustrative case with urea 15 g BID + 1500 mL/day restriction; frames empagliflozin as emerging option. <em>N Engl J Med. 2023;389(16):1499–1509.</em></li>
+        <li><strong>Adrogué, Tucker &amp; Madias, JAMA 2022</strong> — Diagnosis/management of hyponatremia; Furst ratio thresholds. <em>JAMA. 2022;328(3):280–291.</em></li>
+        <li><strong>Warren et al., Endocrine Reviews 2023</strong> — Comprehensive review; second-line options (tolvaptan, urea, SGLT2i). <em>Endocr Rev. 2023;44(5):819–861.</em></li>
+        <li><strong>Rosner, Rondon-Berrios &amp; Sterns, JASN 2025</strong> — Contemporary nephrology perspective on SIAD therapy. <em>J Am Soc Nephrol. 2025;36(4):713–722.</em></li>
+        <li><strong>Refardt et al., JASN 2023</strong> — Empagliflozin randomized, double-blind, placebo-controlled crossover trial in chronic SIAD; +4.1 mmol/L (95% CI 1.7–6.5) at 4 weeks. <em>J Am Soc Nephrol. 2023;34(2):322–332.</em></li>
+        <li><strong>Refardt et al., JASN 2020</strong> — Empagliflozin randomized trial in SIAD inpatients; +10 vs +7 mmol/L at day 5. <em>J Am Soc Nephrol. 2020;31(3):615–624.</em></li>
+        <li><strong>Chander et al., AJKD 2025</strong> — Urea for SIAD: systematic review and meta-analysis (observational only, no RCTs). <em>Am J Kidney Dis. 2025;85(3):303–319.</em></li>
+        <li><strong>Perelló-Camacho et al., Sci Rep 2022</strong> — Clinical efficacy of urea in SIAD (observational). <em>Sci Rep. 2022;12(1):10266.</em></li>
+        <li><strong>Monnerat &amp; Refardt, Nat Rev Endocrinol 2025</strong> — Hyponatremia in aging; fluid restriction and urine/plasma ratio guidance. <em>Nat Rev Endocrinol. 2025;21(9):564–579.</em></li>
+        <li><strong>Monnerat, Best Pract Res Clin Endocrinol Metab 2025</strong> — Emerging treatments (SGLT2i, apelin, high-protein). <em>Best Pract Res Clin Endocrinol Metab. 2025;102055.</em></li>
+        <li><strong>Garrahy et al., JCEM 2020</strong> — Fluid restriction RCT in chronic SIAD. <em>J Clin Endocrinol Metab. 2020;105(12):dgaa619.</em></li>
+        <li><strong>Tzoulis et al., Endocrine 2017</strong> — Furst ratio implementation and SIAD care pathway. <em>Endocrine. 2017;55(2):539–546.</em></li>
+        <li><strong>Peri et al., Endocrine 2017</strong> — SIADH differential diagnosis and clinical management. <em>Endocrine. 2017;55(1):311–319.</em></li>
+        <li><strong>Müller et al., J Intern Med 2026</strong> — High urine osmolality and elevated urine sodium predict early nonresponse to fluid restriction. <em>J Intern Med. 2026 (online ahead of print).</em></li>
+        <li><strong>2014 European (ERBP/ESE/ESICM) guideline</strong> — Formal guideline establishing fluid restriction as first-line for SIAD.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note" style="background:#fff3cd; border-left:5px solid #e6a700; color:#5e4a00;">
+    <strong>⚠️ Severe symptomatic hyponatremia</strong><br>
+    Seizures, coma, or severe neurologic symptoms → <strong>3% hypertonic saline regardless of the Furst ratio</strong>. Correct by 4–6 mmol/L in the first hour if severe, then slow; maximum 8–10 mmol/L per 24 h to avoid osmotic demyelination. Consider a <strong>desmopressin clamp</strong> (1–2 µg IV/SC every 6–8 h) if overcorrection occurs or is anticipated.
+  </div>
+
+  <div class="note evidence">
+    <strong>📊 Garrahy et al. RCT (JCEM 2020) — what "modest rise" means</strong><br>
+    In 46 outpatients with chronic SIAD, fluid restriction to 1 L/day raised plasma sodium by a median of <strong>3 mmol/L at day 4</strong> (vs 1 mmol/L with no treatment), and <strong>4 mmol/L at day 30</strong> (vs 1 mmol/L). Only <strong>17% of restricted patients achieved a rise ≥ 5 mmol/L by day 4</strong>. More than a third failed to reach ≥ 130 mmol/L — underscoring the need for second-line options in the ~50% who fail.
+  </div>
+
+  <div class="note">
+    <strong>Practical points</strong>
+    <ul class="plain" style="margin-top:0.6rem;">
+      <li>Fluid restriction remains first-line for chronic, non-severely symptomatic SIAD — but it fails in roughly half of patients and adherence is difficult.</li>
+      <li>Alternative restriction target: ~500 mL/day below the 24-h urine output.</li>
+      <li><strong>Isotonic (0.9%) saline worsens hyponatremia in SIAD</strong> — the sodium is excreted while free water is retained.</li>
+      <li>Always treat the underlying cause and stop offending drugs (SSRIs, carbamazepine, cyclophosphamide, PPIs, NSAIDs, MDMA).</li>
+      <li>Monitor serum Na every 2–4 h during active correction, then daily once stable.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div>Educational and clinical decision-support tool only — not a substitute for clinical judgment.</div>
+  <div style="margin-top:0.4rem;">Based on Bartter–Schwartz criteria, Furst et al., and contemporary SIAD guidance: Adrogué &amp; Madias NEJM 2023; Adrogué, Tucker &amp; Madias JAMA 2022; Warren et al. Endocr Rev 2023; Rosner, Rondon-Berrios &amp; Sterns JASN 2025; Refardt et al. JASN 2020 &amp; 2023 (empagliflozin RCTs); Chander et al. AJKD 2025 (urea meta-analysis); Monnerat &amp; Refardt Nat Rev Endocrinol 2025; Garrahy et al. JCEM 2020; Tzoulis et al. Endocrine 2017; Peri et al. Endocrine 2017; Müller et al. J Intern Med 2026; 2014 ERBP/ESE/ESICM guideline.</div>
+</footer>
+</div>
+
+<script>
+'use strict';
+
+const MAX_CORRECTION = 10;
+const FURST_FAIL = 1.0;
+const FURST_PARTIAL = 0.5;
+const URINE_RULE_OFFSET = 500;
+const DISCORDANCE_THRESHOLD = 250;
+
+/* ============================================================
+   UNIT SYSTEM
+============================================================ */
+const unitState = { system: 'si' };
+
+const UNIT_LABELS = {
+  si: {
+    na: 'mmol/L', k: 'mmol/L', osm: 'mOsm/kg',
+    urineNa: 'mmol/L', urineK: 'mmol/L',
+    naLong: 'Serum Na⁺ (mmol/L)',
+    urineNaLong: 'Urine Na⁺ (mmol/L)',
+    urineKLong: 'Urine K⁺ (mmol/L)',
+    sosmLong: 'Serum osmolality (mOsm/kg)',
+    uosmLong: 'Urine osmolality (optional, mOsm/kg)',
+    short: 'SI',
+    note: 'Electrolytes in mmol/L · osmolality in mOsm/kg'
+  },
+  us: {
+    na: 'mEq/L', k: 'mEq/L', osm: 'mOsm/kg',
+    urineNa: 'mEq/L', urineK: 'mEq/L',
+    naLong: 'Serum Na⁺ (mEq/L)',
+    urineNaLong: 'Urine Na⁺ (mEq/L)',
+    urineKLong: 'Urine K⁺ (mEq/L)',
+    sosmLong: 'Serum osmolality (mOsm/kg)',
+    uosmLong: 'Urine osmolality (optional, mOsm/kg)',
+    short: 'US',
+    note: 'Electrolytes in mEq/L · osmolality in mOsm/kg'
+  }
+};
+
+function U() { return UNIT_LABELS[unitState.system]; }
+
+function setUnitSystem(sys) {
+  if (sys !== 'si' && sys !== 'us') return;
+  unitState.system = sys;
+  try { localStorage.setItem('siadh-unit-system', sys); } catch (e) {}
+  document.querySelectorAll('.unit-switch button').forEach(b => {
+    const on = b.dataset.unit === sys;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+  const noteEl = document.getElementById('unit-note');
+  if (noteEl) noteEl.textContent = U().note;
+  renderDiag();
+  renderMgmt();
+}
+
+(function () {
+  try {
+    const saved = localStorage.getItem('siadh-unit-system');
+    if (saved === 'si' || saved === 'us') unitState.system = saved;
+  } catch (e) {}
+})();
+
+document.querySelectorAll('.unit-switch button').forEach(btn => {
+  btn.addEventListener('click', () => setUnitSystem(btn.dataset.unit));
+});
+
+/* ============================================================
+   TABS
+============================================================ */
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.tab-panel');
+
+function activateTab(name, focusTab) {
+  tabs.forEach(t => {
+    const on = t.dataset.tab === name;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on ? 'true' : 'false');
+    t.tabIndex = on ? 0 : -1;
+    if (on && focusTab) t.focus();
+  });
+  panels.forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  if (history.replaceState) history.replaceState(null, '', '#' + name);
+}
+
+tabs.forEach(t => {
+  t.addEventListener('click', () => activateTab(t.dataset.tab));
+  t.addEventListener('keydown', e => {
+    const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+    if (!keys.includes(e.key)) return;
+    e.preventDefault();
+    const list = Array.from(tabs);
+    const i = list.indexOf(t);
+    let ni = i;
+    if (e.key === 'ArrowRight') ni = (i + 1) % list.length;
+    if (e.key === 'ArrowLeft') ni = (i - 1 + list.length) % list.length;
+    if (e.key === 'Home') ni = 0;
+    if (e.key === 'End') ni = list.length - 1;
+    activateTab(list[ni].dataset.tab, true);
+  });
+});
+
+function goToTab(name) { activateTab(name); }
+
+(function () {
+  const h = (location.hash || '').replace('#', '');
+  if (['diag', 'mgmt', 'therapy'].includes(h)) activateTab(h);
+})();
+
+document.querySelectorAll('.subtab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.subtab').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.subpanel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
+  });
+});
+
+/* ============================================================
+   HELPERS
+============================================================ */
+function el(id) { return document.getElementById(id); }
+function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+function tag(name, attrs, children) {
+  const n = document.createElement(name);
+  if (attrs) for (const k in attrs) {
+    if (k === 'class') n.className = attrs[k];
+    else if (k === 'html') n.innerHTML = attrs[k];
+    else if (k === 'text') n.textContent = attrs[k];
+    else n.setAttribute(k, attrs[k]);
+  }
+  (children || []).forEach(c => n.appendChild(c));
+  return n;
+}
+function chip(text) {
+  const c = tag('span', { class: 'chip' });
+  c.appendChild(tag('span', { class: 'dot' }));
+  c.appendChild(document.createTextNode(text));
+  return c;
+}
+function renderTrail(target, items) {
+  clear(target);
+  items.forEach(t => target.appendChild(chip(t)));
+}
+function toast(msg) {
+  const t = tag('div', { text: msg });
+  t.style.cssText = 'position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);background:#0b2a4a;color:#fff;padding:0.6rem 1.1rem;border-radius:0.6rem;font-size:0.85rem;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.25);';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+/* ============================================================
+   DIAGNOSTIC ALGORITHM
+============================================================ */
+const DIAG_GATES = [
+  {
+    id: 'na', step: 1,
+    title: 'Confirm hyponatremia',
+    desc: 'Is the serum sodium below 135 mmol/L (135 mEq/L)?',
+    input: { type: 'number', label: 'Serum Na⁺', unitKey: 'na', placeholder: 'e.g. 128', min: 80, max: 200 },
+    evaluate: v => v >= 135
+      ? { stop: true, outcome: 'negative',
+          title: 'Not hyponatremia',
+          msg: 'Serum Na⁺ is ≥ 135 mmol/L (135 mEq/L). Hyponatremia is not present, so no SIADH workup is indicated. Recheck if the clinical picture changes.' }
+      : { next: true }
+  },
+  {
+    id: 'sosm', step: 2,
+    title: 'Confirm hypotonic hyponatremia',
+    desc: 'Is the serum osmolality below 275 mOsm/kg?',
+    input: { type: 'number', label: 'Serum osmolality', unitKey: 'osm', placeholder: 'e.g. 260', min: 200, max: 400 },
+    evaluate: v => v >= 275
+      ? { stop: true, outcome: 'negative',
+          title: 'Not hypotonic hyponatremia',
+          msg: 'Serum osmolality is ≥ 275 mOsm/kg. Consider pseudohyponatremia (severe hyperlipidemia or hyperproteinemia), hyperglycemic hyponatremia, or mannitol/irrigation fluid. Measure glucose and consider a direct ion-selective electrode.' }
+      : { next: true }
+  },
+  {
+    id: 'uosm', step: 3,
+    title: 'Assess renal water handling',
+    desc: 'Is the urine osmolality above 100 mOsm/kg (i.e. urine is not maximally dilute)?',
+    input: { type: 'number', label: 'Urine osmolality', unitKey: 'osm', placeholder: 'e.g. 450', min: 0, max: 1500 },
+    evaluate: v => v <= 100
+      ? { stop: true, outcome: 'negative',
+          title: 'Appropriate renal dilution',
+          msg: 'Urine osmolality ≤ 100 mOsm/kg means the kidney can dilute urine normally. Consider primary polydipsia, low solute intake (tea-and-toast), or beer potomania rather than SIADH.' }
+      : { next: true }
+  },
+  {
+    id: 'una', step: 4,
+    title: 'Assess urinary sodium excretion',
+    desc: 'Urine Na⁺ on a normal salt intake — is it above 30 mmol/L (30 mEq/L)?',
+    input: { type: 'number', label: 'Urine Na⁺', unitKey: 'urineNa', placeholder: 'e.g. 60', min: 0, max: 500 },
+    evaluate: v => v < 30
+      ? { stop: true, outcome: 'yellow',
+          title: 'Low urine Na⁺ — consider hypovolemia or low solute intake',
+          msg: 'Urine Na⁺ < 30 mmol/L (30 mEq/L) suggests hypovolemia (GI losses, third-spacing, remote diuretics) or a low-solute diet. Reassess volume status and consider a fluid challenge. SIADH typically shows urine Na⁺ > 30–40 mmol/L on normal salt intake.' }
+      : { next: true }
+  },
+  {
+    id: 'vol', step: 5,
+    title: 'Clinical volume assessment',
+    desc: 'Which best describes the patient\'s volume status?',
+    input: {
+      type: 'radio',
+      options: [
+        { value: 'hypo', label: 'Hypovolemic', sub: 'Dry mucous membranes, orthostasis, tachycardia, low JVP, reduced skin turgor' },
+        { value: 'eu', label: 'Euvolemic', sub: 'No signs of volume depletion or overload' },
+        { value: 'hyper', label: 'Hypervolemic', sub: 'Peripheral edema, ascites, JVD, pulmonary crackles' }
+      ]
+    },
+    evaluate: v => {
+      if (v === 'hypo') return { stop: true, outcome: 'negative',
+        title: 'Hypovolemic hyponatremia — not SIADH',
+        msg: 'Hypovolemia with high urine Na⁺ suggests renal salt wasting (diuretics, tubular injury, adrenal insufficiency) or extrarenal losses with prior diuretics. Restore euvolemia before reconsidering SIADH.' };
+      if (v === 'hyper') return { stop: true, outcome: 'negative',
+        title: 'Hypervolemic hyponatremia — not SIADH',
+        msg: 'Hypervolemia suggests heart failure, cirrhosis, or nephrotic syndrome (effective circulating volume depletion → ADH release). Treat the underlying disorder. SIADH requires euvolemia.' };
+      return { next: true };
+    }
+  },
+  {
+    id: 'excl', step: 6,
+    title: 'Exclude other causes of euvolemic hypotonic hyponatremia',
+    desc: 'Select any that are present. These must be excluded or treated before diagnosing SIADH.',
+    input: {
+      type: 'checkbox',
+      options: [
+        { value: 'adrenal', label: 'Adrenal insufficiency', sub: 'Check morning cortisol ± ACTH stimulation test' },
+        { value: 'thyroid', label: 'Severe hypothyroidism', sub: 'Check TSH and free T4' },
+        { value: 'diuretic', label: 'Recent or current diuretics', sub: 'Thiazides in particular' },
+        { value: 'renal', label: 'Renal failure / advanced CKD', sub: 'Check creatinine and eGFR' },
+        { value: 'drugs', label: 'ADH-stimulating drugs', sub: 'SSRIs, carbamazepine, cyclophosphamide, PPIs, NSAIDs, MDMA' }
+      ]
+    },
+    evaluate: v => (v && v.length > 0)
+      ? { stop: true, outcome: 'yellow',
+          title: 'Alternative or contributing causes present',
+          msg: 'One or more alternative causes were selected. Treat or exclude each before attributing hyponatremia to SIADH. If all are excluded on further testing, proceed to management.',
+          allowContinue: true, continueLabel: 'All excluded — proceed to management' }
+      : { next: true }
+  },
+  {
+    id: 'final', step: 7,
+    title: 'SIADH confirmed',
+    desc: '',
+    input: { type: 'none' },
+    evaluate: () => ({ stop: true, outcome: 'green',
+      title: '✓ SIADH diagnosis supported',
+      msg: 'All gates passed: hypotonic hyponatremia with impaired urinary dilution, urine Na⁺ > 30 mmol/L (30 mEq/L), euvolemia, and no alternative cause. Proceed to the management algorithm to set a fluid restriction target using the Furst ratio.',
+      allowContinue: false, toManagement: true })
+  }
+];
+
+const diagState = { index: 0, answers: {}, stopped: null };
+
+function diagReadValue(gate) {
+  if (gate.input.type === 'number') {
+    const input = el('dg-' + gate.id);
+    if (!input) return null;
+    const raw = input.value.trim();
+    if (raw === '') return null;
+    const n = parseFloat(raw);
+    return isNaN(n) ? null : n;
+  }
+  if (gate.input.type === 'radio') {
+    const sel = document.querySelector('input[name="dg-' + gate.id + '"]:checked');
+    return sel ? sel.value : null;
+  }
+  if (gate.input.type === 'checkbox') {
+    const vals = [];
+    document.querySelectorAll('input[name="dg-' + gate.id + '"]:checked')
+      .forEach(c => vals.push(c.value));
+    return vals.length ? vals : null;
+  }
+  return null;
+}
+
+function diagSummarize(gate, value) {
+  if (gate.input.type === 'number') {
+    return gate.title + ': ' + value + ' ' + U()[gate.input.unitKey];
+  }
+  if (gate.input.type === 'radio') {
+    const o = gate.input.options.find(x => x.value === value);
+    return gate.title + ': ' + (o ? o.label : value);
+  }
+  if (gate.input.type === 'checkbox') {
+    if (!value || !value.length) return gate.title + ': none present';
+    const labels = value.map(v => {
+      const o = gate.input.options.find(x => x.value === v);
+      return o ? o.label : v;
+    });
+    return gate.title + ': ' + labels.join(', ');
+  }
+  return gate.title;
+}
+
+function diagReset() {
+  if (Object.keys(diagState.answers).length > 3 && !confirm('Reset the diagnostic algorithm? Your answers will be lost.')) return;
+  diagState.index = 0;
+  diagState.answers = {};
+  diagState.stopped = null;
+  renderDiag();
+}
+
+function renderDiag() {
+  const trailEl = el('diag-trail');
+  const card = el('diag-card');
+  if (!trailEl || !card) return;
+
+  clear(trailEl);
+  for (let i = 0; i < diagState.index; i++) {
+    const g = DIAG_GATES[i];
+    const ans = diagState.answers[g.id];
+    if (ans === undefined || ans === null) continue;
+    trailEl.appendChild(chip(diagSummarize(g, ans)));
+  }
+
+  const prevInput = card.querySelector('input[type="number"]');
+  const prevValue = prevInput ? prevInput.value : null;
+
+  clear(card);
+
+  if (diagState.stopped) {
+    const o = diagState.stopped;
+    const box = tag('div', { class: 'outcome ' + o.outcome, role: o.outcome === 'red' ? 'alert' : 'status' });
+    box.appendChild(tag('h4', { text: o.title }));
+    box.appendChild(tag('p', { text: o.msg }));
+    card.appendChild(box);
+
+    const row = tag('div', { class: 'btn-row' });
+    if (o.allowContinue) {
+      const b = tag('button', { class: 'btn btn-primary', id: 'dg-continue', text: o.continueLabel || 'Continue' });
+      b.addEventListener('click', () => {
+        diagState.stopped = null;
+        diagState.index = DIAG_GATES.length - 1;
+        renderDiag();
+      });
+      row.appendChild(b);
+    }
+    if (o.toManagement) {
+      const b = tag('button', { class: 'btn btn-primary', id: 'dg-to-mgmt', text: 'Go to management algorithm →' });
+      b.addEventListener('click', () => goToTab('mgmt'));
+      row.appendChild(b);
+    }
+    const rb = tag('button', { class: 'btn btn-ghost', id: 'dg-reset', text: 'Start over' });
+    rb.addEventListener('click', diagReset);
+    row.appendChild(rb);
+    card.appendChild(row);
+    return;
+  }
+
+  const gate = DIAG_GATES[diagState.index];
+  if (!gate) { diagReset(); return; }
+
+  const cardEl = tag('div', { class: 'card' });
+  cardEl.appendChild(tag('span', { class: 'step-badge', text: 'Step ' + gate.step }));
+  cardEl.appendChild(tag('div', { class: 'step-title', text: gate.title }));
+  if (gate.desc) cardEl.appendChild(tag('div', { class: 'step-desc', text: gate.desc }));
+
+  if (gate.input.type === 'number') {
+    const f = tag('div', { class: 'field', id: 'dg-field-' + gate.id });
+    const lbl = tag('label', { class: 'lbl', for: 'dg-' + gate.id });
+    lbl.appendChild(document.createTextNode(gate.input.label + ' '));
+    if (gate.input.unitKey) {
+      const u = tag('span', { text: '(' + U()[gate.input.unitKey] + ')' });
+      u.style.cssText = 'font-weight:400;color:#6a7e94;';
+      lbl.appendChild(u);
+    }
+    f.appendChild(lbl);
+    const inputEl = tag('input', {
+      type: 'number', step: 'any', id: 'dg-' + gate.id,
+      placeholder: gate.input.placeholder || '',
+      min: gate.input.min, max: gate.input.max
+    });
+    if (prevValue !== null) inputEl.value = prevValue;
+    f.appendChild(inputEl);
+    f.appendChild(tag('div', { class: 'err', text: 'Please enter a valid value.' }));
+    cardEl.appendChild(f);
+  } else if (gate.input.type === 'radio' || gate.input.type === 'checkbox') {
+    gate.input.options.forEach(opt => {
+      const lbl = tag('label', { class: 'opt' });
+      const inp = tag('input', {
+        type: gate.input.type,
+        name: 'dg-' + gate.id,
+        value: opt.value
+      });
+      const prev = diagState.answers[gate.id];
+      if (gate.input.type === 'radio' && prev === opt.value) inp.checked = true;
+      if (gate.input.type === 'checkbox' && Array.isArray(prev) && prev.includes(opt.value)) inp.checked = true;
+      lbl.appendChild(inp);
+      const span = tag('span', { class: 'opt-label' });
+      span.appendChild(tag('strong', { text: opt.label }));
+      if (opt.sub) span.appendChild(tag('span', { text: opt.sub }));
+      lbl.appendChild(span);
+      cardEl.appendChild(lbl);
+    });
+  }
+
+  const row = tag('div', { class: 'btn-row' });
+  const nextBtn = tag('button', { class: 'btn btn-primary', id: 'dg-next', text: 'Continue' });
+  nextBtn.addEventListener('click', diagAdvance);
+  row.appendChild(nextBtn);
+  if (diagState.index > 0) {
+    const back = tag('button', { class: 'btn btn-ghost', id: 'dg-back', text: 'Back' });
+    back.addEventListener('click', () => { diagState.index = Math.max(0, diagState.index - 1); renderDiag(); });
+    row.appendChild(back);
+  }
+  const rb = tag('button', { class: 'btn btn-ghost', id: 'dg-reset', text: 'Reset' });
+  rb.addEventListener('click', diagReset);
+  row.appendChild(rb);
+  cardEl.appendChild(row);
+
+  card.appendChild(cardEl);
+
+  card.querySelectorAll('.opt').forEach(lbl => {
+    const inp = lbl.querySelector('input');
+    if (!inp) return;
+    const sync = () => lbl.classList.toggle('selected', inp.checked);
+    inp.addEventListener('change', sync);
+    sync();
+  });
+
+  const firstNum = card.querySelector('input[type="number"]');
+  if (firstNum) {
+    if (prevValue === null) firstNum.focus();
+    firstNum.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); diagAdvance(); }
+    });
+  }
+}
+
+function diagAdvance() {
+  const gate = DIAG_GATES[diagState.index];
+  const val = diagReadValue(gate);
+
+  if (gate.input.type === 'number') {
+    const field = el('dg-field-' + gate.id);
+    const input = el('dg-' + gate.id);
+    field.classList.remove('invalid');
+    input.removeAttribute('aria-invalid');
+    if (val === null) {
+      field.classList.add('invalid');
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
+      return;
+    }
+    if (gate.input.min !== undefined && val < gate.input.min) {
+      field.querySelector('.err').textContent = 'Value must be ≥ ' + gate.input.min + '.';
+      field.classList.add('invalid');
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
+      return;
+    }
+    if (gate.input.max !== undefined && val > gate.input.max) {
+      field.querySelector('.err').textContent = 'Value must be ≤ ' + gate.input.max + '.';
+      field.classList.add('invalid');
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
+      return;
+    }
+  }
+  if (gate.input.type === 'radio' && val === null) {
+    toast('Please select an option to continue.');
+    return;
+  }
+  if (gate.input.type === 'checkbox' && val === null) {
+    diagState.answers[gate.id] = [];
+    diagState.index++;
+    renderDiag();
+    return;
+  }
+
+  diagState.answers[gate.id] = val;
+  const res = gate.evaluate(val);
+
+  if (res.stop) {
+    diagState.stopped = res;
+    diagState.index = Math.min(diagState.index + 1, DIAG_GATES.length - 1);
+  } else {
+    diagState.index++;
+  }
+  renderDiag();
+}
+
+/* ============================================================
+   MANAGEMENT ALGORITHM
+============================================================ */
+const mgmtState = {
+  stage: 'severity',
+  severity: null,
+  na: null, urineNa: null, urineK: null, uosm: null,
+  furst: null,
+  startNa: null, currentNa: null, delta: null, cumulative: null,
+  urineOutput: null,
+  trail: []
+};
+
+function computeFurst({ na, urineNa, urineK }) {
+  const sum = urineNa + urineK;
+  if (sum <= 0) {
+    return {
+      ratio: 0, band: 'invalid',
+      target: '—',
+      fluidRange: '—',
+      note: 'Urine Na⁺ + K⁺ = 0. Recheck the sample — this is physiologically unusual.',
+      actions: 'Repeat urine electrolytes before deciding on therapy.'
+    };
+  }
+  const ratio = sum / na;
+  if (ratio > FURST_FAIL) {
+    return {
+      ratio, band: 'fail',
+      target: '~0 mL/day (not practical)',
+      fluidRange: '0 mL/day',
+      note: 'Ratio > 1.0 — essentially no free water is being excreted. Fluid restriction alone is futile.',
+      actions: 'Start urea 15–30 g/day or tolvaptan 7.5–15 mg daily. Consider referral or inpatient monitoring for Na checks.'
+    };
+  }
+  if (ratio >= FURST_PARTIAL) {
+    return {
+      ratio, band: 'partial',
+      target: '500 mL/day',
+      fluidRange: '~500 mL/day',
+      note: 'Ratio 0.5–1.0 — partial free-water excretion. Moderate restriction required.',
+      actions: 'Reassess serum Na at 24–48 h. If the rise is ≤ 3 mmol/L over 48 h, escalate to second-line therapy.'
+    };
+  }
+  return {
+    ratio, band: 'respond',
+    target: '1000 mL/day',
+    fluidRange: '~1000 mL/day',
+    note: 'Ratio < 0.5 — the kidney can excrete free water. Milder restriction is likely sufficient.',
+    actions: 'Reassess serum Na at 24–48 h. If the rise is ≤ 3 mmol/L over 48 h, escalate to second-line therapy.'
+  };
+}
+
+function furstTargetMl(band) {
+  if (band === 'fail') return 0;
+  if (band === 'partial') return 500;
+  if (band === 'respond') return 1000;
+  return null;
+}
+
+function urineRuleMl(urineOutputMl) {
+  if (urineOutputMl === null || isNaN(urineOutputMl)) return null;
+  const result = urineOutputMl - URINE_RULE_OFFSET;
+  return {
+    raw: result,
+    applicable: urineOutputMl > URINE_RULE_OFFSET,
+    value: Math.max(0, result)
+  };
+}
+
+function mgmtReset() {
+  if (mgmtState.trail.length > 2 && !confirm('Reset the management algorithm?')) return;
+  Object.assign(mgmtState, {
+    stage: 'severity', severity: null,
+    na: null, urineNa: null, urineK: null, uosm: null,
+    furst: null,
+    startNa: null, currentNa: null, delta: null, cumulative: null,
+    urineOutput: null,
+    trail: []
+  });
+  renderMgmt();
+}
+
+function renderMgmt() {
+  const trailEl = el('mgmt-trail');
+  const card = el('mgmt-card');
+  if (!trailEl || !card) return;
+  renderTrail(trailEl, mgmtState.trail);
+
+  const preserve = {};
+  ['mg-na', 'mg-una', 'mg-uk', 'mg-uosm', 'mg-startna', 'mg-currentna', 'mg-delta', 'mg-urine-output']
+    .forEach(id => {
+      const input = el(id);
+      if (input) preserve[id] = input.value;
+    });
+  const sevChecked = document.querySelector('input[name="mg-sev"]:checked');
+  const sevValue = sevChecked ? sevChecked.value : null;
+
+  clear(card);
+
+  if (mgmtState.stage === 'severity') return renderMgmtSeverity(card, sevValue);
+  if (mgmtState.stage === 'hypertonic') return renderMgmtHypertonic(card);
+  if (mgmtState.stage === 'furst') return renderMgmtFurst(card, preserve);
+  if (mgmtState.stage === 'recommendation') return renderMgmtRecommendation(card);
+  if (mgmtState.stage === 'reassess') return renderMgmtReassess(card, preserve);
+  if (mgmtState.stage === 'escalate') return renderMgmtEscalate(card);
+}
+
+function renderMgmtSeverity(card, sevValue) {
+  const c = tag('div', { class: 'card' });
+  c.appendChild(tag('span', { class: 'step-badge', text: 'Step 1' }));
+  c.appendChild(tag('div', { class: 'step-title', text: 'Assess symptom severity' }));
+  c.appendChild(tag('div', { class: 'step-desc', text: 'Severe symptoms mandate hypertonic saline regardless of the Furst ratio.' }));
+
+  const opts = [
+    { value: 'severe', label: 'Severe', sub: 'Seizures, coma, obtundation, cardiorespiratory distress' },
+    { value: 'moderate', label: 'Moderate', sub: 'Nausea, confusion, headache' },
+    { value: 'mild', label: 'Mild or asymptomatic', sub: 'No significant neurologic symptoms' }
+  ];
+  opts.forEach(o => {
+    const lbl = tag('label', { class: 'opt' });
+    const inp = tag('input', { type: 'radio', name: 'mg-sev', value: o.value });
+    if (sevValue === o.value) inp.checked = true;
+    lbl.appendChild(inp);
+    const span = tag('span', { class: 'opt-label' });
+    span.appendChild(tag('strong', { text: o.label }));
+    span.appendChild(tag('span', { text: o.sub }));
+    lbl.appendChild(span);
+    c.appendChild(lbl);
+  });
+
+  const row = tag('div', { class: 'btn-row' });
+  const next = tag('button', { class: 'btn btn-primary', id: 'mg-sev-next', text: 'Continue' });
+  next.addEventListener('click', () => {
+    const sel = document.querySelector('input[name="mg-sev"]:checked');
+    if (!sel) { toast('Please select a severity level.'); return; }
+    const found = opts.find(o => o.value === sel.value);
+    mgmtState.severity = sel.value;
+    mgmtState.trail.push('Severity: ' + (found ? found.label : sel.value));
+    mgmtState.stage = sel.value === 'severe' ? 'hypertonic' : 'furst';
+    renderMgmt();
+  });
+  row.appendChild(next);
+  const rb = tag('button', { class: 'btn btn-ghost', id: 'mg-reset', text: 'Reset' });
+  rb.addEventListener('click', mgmtReset);
+  row.appendChild(rb);
+  c.appendChild(row);
+
+  card.appendChild(c);
+  card.querySelectorAll('.opt').forEach(lbl => {
+    const inp = lbl.querySelector('input');
+    const sync = () => lbl.classList.toggle('selected', inp.checked);
+    inp.addEventListener('change', sync);
+    sync();
+  });
+}
+
+function renderMgmtHypertonic(card) {
+  const c = tag('div', { class: 'card' });
+  const box = tag('div', { class: 'outcome red', role: 'alert' });
+  box.appendChild(tag('h4', { text: '🚨 Severe symptomatic hyponatremia' }));
+  const p = tag('p');
+  p.innerHTML = 'Give <strong>3% hypertonic saline immediately</strong> — the Furst ratio does not apply in this situation.';
+  box.appendChild(p);
+  c.appendChild(box);
+
+  const note = tag('div', { class: 'note' });
+  note.style.marginTop = '1rem';
+  note.innerHTML = '<strong>3% NaCl protocol</strong>';
+  const ul = tag('ul', { class: 'plain' });
+  ul.style.marginTop = '0.6rem';
+  [
+    '<strong>Bolus:</strong> 100–150 mL IV over 10–20 min (may repeat until symptoms improve or Na rises 4–6 mmol/L).',
+    '<strong>Alternative:</strong> 0.5–2 mL/kg/h continuous infusion.',
+    '<strong>Target:</strong> raise serum Na by 4–6 mmol/L in the first hour if severe; then slow to ≤ 8–10 mmol/L per 24 h.',
+    '<strong>Monitor:</strong> serum Na every 2–4 h initially.',
+    '<strong>Desmopressin clamp:</strong> if overcorrection occurs or is anticipated, give desmopressin 1–2 µg IV/SC every 6–8 h and replace free water.',
+    '<strong>Do not use isotonic (0.9%) saline</strong> — in SIAD it worsens hyponatremia because the sodium is excreted while free water is retained.',
+    '<strong>If overcorrected:</strong> stop hypertonic saline; consider free-water replacement ± desmopressin.',
+    '<strong>Avoid</strong> osmotic demyelination — never exceed 10 mmol/L in 24 h, especially in chronic hyponatremia, malnutrition, alcoholism, or liver disease.'
+  ].forEach(html => {
+    const li = tag('li'); li.innerHTML = html; ul.appendChild(li);
+  });
+  note.appendChild(ul);
+  c.appendChild(note);
+
+  const note2 = tag('div', { class: 'note' });
+  note2.style.marginTop = '1rem';
+  note2.textContent = 'After stabilization, reassess and proceed to the Furst-guided algorithm for ongoing management.';
+  c.appendChild(note2);
+
+  const row = tag('div', { class: 'btn-row' });
+  const b = tag('button', { class: 'btn btn-primary', id: 'mg-after-severe', text: 'Continue to Furst-guided management →' });
+  b.addEventListener('click', () => { mgmtState.stage = 'furst'; renderMgmt(); });
+  row.appendChild(b);
+  const rb = tag('button', { class: 'btn btn-ghost', id: 'mg-reset', text: 'Reset' });
+  rb.addEventListener('click', mgmtReset);
+  row.appendChild(rb);
+  c.appendChild(row);
+
+  card.appendChild(c);
+}
+
+function renderMgmtFurst(card, preserve) {
+  const c = tag('div', { class: 'card' });
+  c.appendChild(tag('span', { class: 'step-badge', text: 'Step 2' }));
+  c.appendChild(tag('div', { class: 'step-title', text: 'Calculate the Furst U/P electrolyte ratio' }));
+  c.appendChild(tag('div', { class: 'step-desc', text: 'Ratio = (urine Na⁺ + urine K⁺) ÷ serum Na⁺. All values in the same unit system.' }));
+
+  const grid1 = tag('div', { class: 'grid2' });
+  grid1.appendChild(makeField('mg-na', U().naLong, 'e.g. 125', 80, 200, preserve['mg-na']));
+  grid1.appendChild(makeField('mg-una', U().urineNaLong, 'e.g. 60', 0, 500, preserve['mg-una']));
+  c.appendChild(grid1);
+
+  const grid2 = tag('div', { class: 'grid2' });
+  grid2.appendChild(makeField('mg-uk', U().urineKLong, 'e.g. 30', 0, 300, preserve['mg-uk']));
+  grid2.appendChild(makeField('mg-uosm', U().uosmLong, 'e.g. 450', 0, 1500, preserve['mg-uosm']));
+  c.appendChild(grid2);
+
+  const fn = tag('div', { class: 'formula-footnote' });
+  fn.innerHTML = 'Note: the classic Furst denominator is serum Na⁺ alone. Some groups (e.g. Tzoulis et al.) use serum Na⁺ + serum K⁺ in the denominator, which yields a slightly lower ratio. The ratio is dimensionless and unit-independent — SI and US values give the same result.';
+  c.appendChild(fn);
+
+  const row = tag('div', { class: 'btn-row' });
+  const calc = tag('button', { class: 'btn btn-primary', id: 'mg-calc', text: 'Calculate & continue' });
+  calc.addEventListener('click', () => {
+    const na = parseFloat(el('mg-na').value);
+    const una = parseFloat(el('mg-una').value);
+    const uk = parseFloat(el('mg-uk').value);
+    const uosmRaw = el('mg-uosm').value.trim();
+    const uosm = uosmRaw === '' ? null : parseFloat(uosmRaw);
+
+    const bad = [];
+    if (isNaN(na) || na <= 0) bad.push('mg-na');
+    if (isNaN(una) || una < 0) bad.push('mg-una');
+    if (isNaN(uk) || uk < 0) bad.push('mg-uk');
+    if (uosm !== null && (isNaN(uosm) || uosm < 0)) bad.push('mg-uosm');
+
+    document.querySelectorAll('#mgmt-card input').forEach(i => i.removeAttribute('aria-invalid'));
+    if (bad.length) {
+      bad.forEach(id => el(id).setAttribute('aria-invalid', 'true'));
+      toast('Please correct the highlighted fields.');
+      el(bad[0]).focus();
+      return;
+    }
+
+    mgmtState.na = na;
+    mgmtState.urineNa = una;
+    mgmtState.urineK = uk;
+    mgmtState.uosm = uosm;
+    mgmtState.furst = computeFurst({ na, urineNa: una, urineK: uk });
+    mgmtState.trail.push('Furst ratio: ' + mgmtState.furst.ratio.toFixed(2));
+    mgmtState.stage = 'recommendation';
+    renderMgmt();
+  });
+  row.appendChild(calc);
+
+  const back = tag('button', { class: 'btn btn-ghost', id: 'mg-back-sev', text: 'Back' });
+  back.addEventListener('click', () => {
+    mgmtState.trail = [];
+    mgmtState.stage = 'severity';
+    renderMgmt();
+  });
+  row.appendChild(back);
+  const rb = tag('button', { class: 'btn btn-ghost', id: 'mg-reset', text: 'Reset' });
+  rb.addEventListener('click', mgmtReset);
+  row.appendChild(rb);
+  c.appendChild(row);
+
+  card.appendChild(c);
+
+  ['mg-na', 'mg-una', 'mg-uk', 'mg-uosm'].forEach(id => {
+    const input = el(id);
+    if (input) input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); calc.click(); }
+    });
+  });
+  const first = el('mg-na');
+  if (first && (!first.value)) first.focus();
+}
+
+function makeField(id, labelText, placeholder, min, max, prevValue) {
+  const f = tag('div', { class: 'field', id: 'field-' + id });
+  const lbl = tag('label', { class: 'lbl', for: id, text: labelText });
+  f.appendChild(lbl);
+  const inp = tag('input', { type: 'number', step: 'any', id, placeholder, min, max });
+  if (prevValue !== undefined && prevValue !== null && prevValue !== '') inp.value = prevValue;
+  f.appendChild(inp);
+  f.appendChild(tag('div', { class: 'err', text: 'Please enter a valid value.' }));
+  return f;
+}
+
+function renderMgmtRecommendation(card) {
+  const r = mgmtState.furst;
+  const f = r.ratio.toFixed(2);
+  const clsMap = { fail: 'red', partial: 'yellow', respond: 'green', invalid: 'red' };
+  const unitNa = U().na;
+  const unitOsm = U().osm;
+
+  const c = tag('div', { class: 'card' });
+
+  const wrap = tag('div', { class: 'ratio-wrap' });
+  wrap.appendChild(tag('div', { class: 'ratio-cap', text: 'Furst U/P ratio' }));
+  wrap.appendChild(tag('div', { class: 'ratio-num', text: f }));
+  wrap.appendChild(tag('div', {
+    class: 'ratio-formula',
+    text: '(' + mgmtState.urineNa + ' + ' + mgmtState.urineK + ') ÷ ' + mgmtState.na + '  [' + unitNa + ']'
+  }));
+  c.appendChild(wrap);
+
+  const outcome = tag('div', { class: 'outcome ' + clsMap[r.band], role: 'status' });
+  outcome.innerHTML = '<strong>Ratio ' + f + '</strong> — ' + r.note.replace(/^Ratio[^—]*—\s*/, '');
+  c.appendChild(outcome);
+
+  const fluid = tag('div', { class: 'fluid-box' });
+
+  const fbHeader = tag('div', { class: 'fb-header' });
+  fbHeader.appendChild(tag('span', { class: 'fb-icon', text: '💧' }));
+  fbHeader.appendChild(tag('span', { class: 'fb-title', text: 'Fluid Restriction Target — Specific Volumes' }));
+  fluid.appendChild(fbHeader);
+
+  const primary = tag('div', { class: 'fb-primary' });
+  const targetEl = tag('div', { class: 'fb-target' });
+  if (r.band === 'fail') {
+    targetEl.innerHTML = '≈ 0 <small>mL/day</small>';
+  } else if (r.band === 'partial') {
+    targetEl.innerHTML = '500 <small>mL/day</small>';
+  } else if (r.band === 'respond') {
+    targetEl.innerHTML = '1000 <small>mL/day</small>';
+  } else {
+    targetEl.textContent = '—';
+  }
+  primary.appendChild(targetEl);
+  const labelEl = tag('div', { class: 'fb-target-label' });
+  if (r.band === 'fail') labelEl.textContent = '(not practical — go to second-line)';
+  else if (r.band === 'partial') labelEl.textContent = '≈ 500 mL/day';
+  else if (r.band === 'respond') labelEl.textContent = '≈ 1000 mL/day (1 L/day)';
+  primary.appendChild(labelEl);
+  fluid.appendChild(primary);
+
+  const bandTable = tag('table', { class: 'fb-band-table' });
+  const thead = tag('thead');
+  const trh = tag('tr');
+  ['Furst ratio', 'Free-water clearance', 'Recommended intake'].forEach(h => {
+    trh.appendChild(tag('th', { text: h }));
+  });
+  thead.appendChild(trh);
+  bandTable.appendChild(thead);
+
+  const tbody = tag('tbody');
+  const bands = [
+    { key: 'respond', ratio: '< 0.5', clearance: 'Good — kidney can excrete free water', intake: '~1000 mL/day (1 L)' },
+    { key: 'partial', ratio: '0.5 – 1.0', clearance: 'Partial — moderate restriction required', intake: '~500 mL/day' },
+    { key: 'fail', ratio: '> 1.0', clearance: 'Essentially none — restriction futile', intake: '~0 mL/day (not practical)' }
+  ];
+  bands.forEach(b => {
+    const tr = tag('tr');
+    if (b.key === r.band) tr.className = 'active-band';
+    tr.appendChild(tag('td', { html: '<strong>' + b.ratio + '</strong>' }));
+    tr.appendChild(tag('td', { text: b.clearance }));
+    tr.appendChild(tag('td', { html: '<strong>' + b.intake + '</strong>' }));
+    tbody.appendChild(tr);
+  });
+  bandTable.appendChild(tbody);
+  fluid.appendChild(bandTable);
+
+  const uv = tag('div', { class: 'uv-calc' });
+
+  const uvTitle = tag('div', { class: 'uv-title' });
+  uvTitle.appendChild(document.createTextNode('🧮 Interactive urine-volume calculator'));
+  uvTitle.appendChild(tag('span', { class: 'uv-badge', text: 'LIVE' }));
+  uv.appendChild(uvTitle);
+
+  const inputRow = tag('div', { class: 'uv-input-row' });
+  const uvLabel = tag('label', { for: 'mg-urine-output', text: '24-hour urine output:' });
+  inputRow.appendChild(uvLabel);
+
+  const uvInput = tag('input', {
+    type: 'number',
+    step: 'any',
+    id: 'mg-urine-output',
+    placeholder: 'e.g. 1500',
+    min: 0,
+    max: 10000,
+    'aria-describedby': 'uv-formula-note'
+  });
+  if (mgmtState.urineOutput !== null) uvInput.value = mgmtState.urineOutput;
+  inputRow.appendChild(uvInput);
+  inputRow.appendChild(tag('span', { class: 'uv-unit', text: 'mL/24 h' }));
+  uv.appendChild(inputRow);
+
+  const resultArea = tag('div', { class: 'uv-result placeholder', id: 'uv-result', 'aria-live': 'polite' });
+  uv.appendChild(resultArea);
+
+  const compareArea = tag('div', { class: 'uv-compare', id: 'uv-compare', style: 'display:none' });
+  uv.appendChild(compareArea);
+
+  const discordanceArea = tag('div', { id: 'uv-discordance' });
+  uv.appendChild(discordanceArea);
+
+  const uvFormula = tag('div', { class: 'uv-formula', id: 'uv-formula-note' });
+  uvFormula.textContent = 'Rule: intake = 24-h urine output − 500 mL';
+  uv.appendChild(uvFormula);
+
+  fluid.appendChild(uv);
+
+  const nejm = tag('div', { class: 'fb-rule' });
+  nejm.style.marginTop = '0.8rem';
+  nejm.innerHTML = '<strong>NEJM 2023 illustrative case:</strong> fluid restriction to <strong>1500 mL/day</strong> combined with <strong>urea 15 g BID</strong> (or long-term <strong>tolvaptan starting at 7.5 mg/day</strong>), with close Na monitoring.';
+  fluid.appendChild(nejm);
+
+  const compliance = tag('div', { class: 'fb-note' });
+  compliance.textContent = '⚠️ Compliance with ≤ 1 L/day is difficult to sustain — a major reason adjunctive solute therapy (urea, tolvaptan, empagliflozin) is often needed.';
+  fluid.appendChild(compliance);
+
+  c.appendChild(fluid);
+
+  const act = tag('div', { class: 'note' });
+  act.style.marginTop = '1rem';
+  act.innerHTML = '<strong>Next action:</strong> ' + r.actions;
+  c.appendChild(act);
+
+  const predictors = tag('div', { class: 'note evidence' });
+  predictors.style.marginTop = '0.9rem';
+  predictors.innerHTML = '<strong>📉 Predictors of poor response to fluid restriction</strong>';
+  const pul = tag('ul', { class: 'plain' });
+  pul.style.marginTop = '0.5rem';
+  const preds = [
+    'Urine osmolality > 500 mOsm/kg' + (mgmtState.uosm !== null ? ' — this patient: <strong>' + mgmtState.uosm + ' ' + unitOsm + '</strong>' : ''),
+    'Urine specific gravity > 1.020',
+    'High urine sodium (e.g. > 130 ' + unitNa + ')',
+    'Low urine output (< 1 L/day)',
+    'Furst ratio > 1.0 (already reflected above)'
+  ];
+  preds.forEach(t => { const li = tag('li'); li.innerHTML = t; pul.appendChild(li); });
+  predictors.appendChild(pul);
+  c.appendChild(predictors);
+
+  if (mgmtState.uosm !== null && mgmtState.uosm > 500) {
+    const warn = tag('div', { class: 'outcome red', role: 'alert' });
+    warn.style.marginTop = '0.9rem';
+    warn.style.fontSize = '0.86rem';
+    warn.innerHTML = '⚠️ Urine osmolality <strong>' + mgmtState.uosm + ' ' + unitOsm + '</strong> (> 500) — an independent predictor of fluid-restriction failure.';
+    c.appendChild(warn);
+  }
+
+  const row = tag('div', { class: 'btn-row' });
+  const toRe = tag('button', { class: 'btn btn-primary', id: 'mg-to-reassess', text: 'Proceed to 24–48 h reassessment →' });
+  toRe.addEventListener('click', () => { mgmtState.stage = 'reassess'; renderMgmt(); });
+  row.appendChild(toRe);
+  if (r.band === 'fail') {
+    const toTh = tag('button', { class: 'btn btn-ghost', id: 'mg-to-therapy', text: 'View second-line therapy →' });
+    toTh.addEventListener('click', () => goToTab('therapy'));
+    row.appendChild(toTh);
+  }
+  const rb = tag('button', { class: 'btn btn-ghost', id: 'mg-reset', text: 'Reset' });
+  rb.addEventListener('click', mgmtReset);
+  row.appendChild(rb);
+  c.appendChild(row);
+
+  card.appendChild(c);
+
+  updateUrineCalculator(mgmtState, r.band);
+
+  uvInput.addEventListener('input', () => {
+    const raw = uvInput.value.trim();
+    if (raw === '') {
+      mgmtState.urineOutput = null;
+    } else {
+      const n = parseFloat(raw);
+      mgmtState.urineOutput = isNaN(n) ? null : n;
+    }
+    updateUrineCalculator(mgmtState, r.band);
+  });
+
+  uvInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') e.preventDefault();
+  });
+}
+
+function updateUrineCalculator(state, furstBand) {
+  const resultArea = el('uv-result');
+  const compareArea = el('uv-compare');
+  const discordanceArea = el('uv-discordance');
+  if (!resultArea || !compareArea || !discordanceArea) return;
+
+  const output = state.urineOutput;
+
+  if (output === null || isNaN(output)) {
+    resultArea.className = 'uv-result placeholder';
+    clear(resultArea);
+    resultArea.appendChild(tag('span', {
+      class: 'uv-result-value',
+      text: 'Enter 24-h urine output above'
+    }));
+    compareArea.style.display = 'none';
+    clear(discordanceArea);
+    return;
+  }
+
+  if (output <= URINE_RULE_OFFSET) {
+    resultArea.className = 'uv-result warn';
+    clear(resultArea);
+    const val = tag('span', { class: 'uv-result-value', html: '⚠️ Not applicable' });
+    resultArea.appendChild(val);
+    const lbl = tag('span', { class: 'uv-result-label' });
+    lbl.innerHTML = 'Urine output ≤ 500 mL/day — the −500 mL rule would give ≤ 0. This suggests severe oliguria; reassess volume status and consider whether SIAD is the correct diagnosis.';
+    resultArea.appendChild(lbl);
+    compareArea.style.display = 'none';
+    clear(discordanceArea);
+    return;
+  }
+
+  const calc = urineRuleMl(output);
+  resultArea.className = 'uv-result';
+  clear(resultArea);
+
+  const valEl = tag('span', { class: 'uv-result-value', html: calc.value + ' <small>mL/day</small>' });
+  resultArea.appendChild(valEl);
+  const lblEl = tag('span', { class: 'uv-result-label' });
+  lblEl.innerHTML = '= 24-h urine output (' + output + ' mL) − 500 mL';
+  resultArea.appendChild(lblEl);
+
+  const furstMl = furstTargetMl(furstBand);
+  compareArea.style.display = 'grid';
+  clear(compareArea);
+
+  const col1 = tag('div', { class: 'uv-compare-col' });
+  col1.appendChild(tag('div', { class: 'uv-compare-label', text: 'Furst-derived target' }));
+  const col1Val = tag('div', { class: 'uv-compare-value' });
+  if (furstMl === 0) col1Val.innerHTML = '≈ 0 <small>mL/day</small>';
+  else if (furstMl === null) col1Val.textContent = '—';
+  else col1Val.innerHTML = furstMl + ' <small>mL/day</small>';
+  col1.appendChild(col1Val);
+  const col1Note = tag('div', { class: 'uv-compare-note' });
+  if (furstBand === 'fail') col1Note.textContent = 'Ratio > 1.0 — restriction futile';
+  else if (furstBand === 'partial') col1Note.textContent = 'Ratio 0.5–1.0';
+  else if (furstBand === 'respond') col1Note.textContent = 'Ratio < 0.5';
+  col1.appendChild(col1Note);
+  compareArea.appendChild(col1);
+
+  const col2 = tag('div', { class: 'uv-compare-col active-col' });
+  col2.appendChild(tag('div', { class: 'uv-compare-label', text: 'Urine-volume rule' }));
+  const col2Val = tag('div', { class: 'uv-compare-value', html: calc.value + ' <small>mL/day</small>' });
+  col2.appendChild(col2Val);
+  const col2Note = tag('div', { class: 'uv-compare-note' });
+  col2Note.textContent = 'Output − 500 mL';
+  col2.appendChild(col2Note);
+  compareArea.appendChild(col2);
+
+  clear(discordanceArea);
+  if (furstMl === null) return;
+  const diff = Math.abs(furstMl - calc.value);
+
+  if (diff > DISCORDANCE_THRESHOLD) {
+    const warn = tag('div', { class: 'uv-discordance' });
+    let advice;
+    if (calc.value > furstMl) {
+      advice = 'The urine-volume rule is more permissive than the Furst ratio. Given the Furst ratio predicts poor free-water excretion, favor the stricter Furst-based target for safety.';
+    } else {
+      advice = 'The urine-volume rule is stricter than the Furst ratio. Consider whether the 24-h urine output is representative — if the patient is actively diuresing, the Furst target may be more appropriate.';
+    }
+    warn.innerHTML = '<strong>⚠️ Discordance (' + diff + ' mL difference):</strong> ' + advice;
+    discordanceArea.appendChild(warn);
+  } else if (diff > 0) {
+    const note = tag('div', { class: 'uv-discordance' });
+    note.style.background = 'rgba(13, 122, 122, 0.10)';
+    note.style.borderLeftColor = 'var(--teal)';
+    note.style.color = '#1f3b5c';
+    note.innerHTML = '<strong>✓ Concordant:</strong> both methods agree within ' + DISCORDANCE_THRESHOLD + ' mL — the target is <strong>' + calc.value + ' mL/day</strong>.';
+    discordanceArea.appendChild(note);
+  }
+}
+
+function renderMgmtReassess(card, preserve) {
+  const c = tag('div', { class: 'card' });
+  c.appendChild(tag('span', { class: 'step-badge', text: 'Step 3' }));
+  c.appendChild(tag('div', { class: 'step-title', text: 'Reassess after 24–48 hours' }));
+  c.appendChild(tag('div', { class: 'step-desc', text: 'Enter the starting and current serum Na to compute the cumulative rise, and the 24 h delta. Failure is defined as a rise ≤ 3 mmol/L over 48 h on < 1 L/day restriction.' }));
+
+  c.appendChild(makeField('mg-startna', 'Starting serum Na⁺ (' + U().na + ')', 'e.g. 125', 80, 200, preserve['mg-startna']));
+  c.appendChild(makeField('mg-currentna', 'Current serum Na⁺ (' + U().na + ')', 'e.g. 128', 80, 200, preserve['mg-currentna']));
+  c.appendChild(makeField('mg-delta', 'Rise over the last 24 h (' + U().na + ')', 'e.g. 2', -20, 40, preserve['mg-delta']));
+
+  const row = tag('div', { class: 'btn-row' });
+  const next = tag('button', { class: 'btn btn-primary', id: 'mg-reassess-next', text: 'Continue' });
+  next.addEventListener('click', () => {
+    const start = parseFloat(el('mg-startna').value);
+    const current = parseFloat(el('mg-currentna').value);
+    const delta = parseFloat(el('mg-delta').value);
+    const bad = [];
+    if (isNaN(start)) bad.push('mg-startna');
+    if (isNaN(current)) bad.push('mg-currentna');
+    if (isNaN(delta)) bad.push('mg-delta');
+    if (bad.length) {
+      bad.forEach(id => el(id).setAttribute('aria-invalid', 'true'));
+      toast('Please enter all three values.');
+      el(bad[0]).focus();
+      return;
+    }
+    mgmtState.startNa = start;
+    mgmtState.currentNa = current;
+    mgmtState.delta = delta;
+    mgmtState.cumulative = current - start;
+    mgmtState.trail.push('24 h ΔNa: ' + delta + ' ' + U().na);
+    mgmtState.stage = 'escalate';
+    renderMgmt();
+  });
+  row.appendChild(next);
+
+  const back = tag('button', { class: 'btn btn-ghost', id: 'mg-back-rec', text: 'Back' });
+  back.addEventListener('click', () => {
+    mgmtState.trail = mgmtState.trail.filter(t => t.startsWith('Furst'));
+    mgmtState.stage = 'recommendation';
+    renderMgmt();
+  });
+  row.appendChild(back);
+  const rb = tag('button', { class: 'btn btn-ghost', id: 'mg-reset', text: 'Reset' });
+  rb.addEventListener('click', mgmtReset);
+  row.appendChild(rb);
+  c.appendChild(row);
+
+  card.appendChild(c);
+
+  const first = el('mg-startna');
+  if (first && !first.value) first.focus();
+  ['mg-startna', 'mg-currentna', 'mg-delta'].forEach(id => {
+    const input = el(id);
+    if (input) input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); next.click(); }
+    });
+  });
+}
+
+function renderMgmtEscalate(card) {
+  const d = mgmtState.delta;
+  const cum = mgmtState.cumulative;
+  const unitNa = U().na;
+  let cls, title, msg;
+
+  if (d < 2) {
+    cls = 'red';
+    title = 'Inadequate response — escalate to second-line therapy';
+    msg = 'A serum Na rise of < 2 ' + unitNa + '/day (or ≤ 3 ' + unitNa + ' over 48 h) on < 1 L/day restriction predicts fluid-restriction failure. Start <strong>urea 15–30 g/day</strong> or <strong>tolvaptan 7.5–15 mg daily</strong>; <strong>empagliflozin 25 mg/day</strong> is a newer alternative with 2 RCTs in SIAD. Continue to treat the underlying cause.';
+  } else if (d <= 8) {
+    cls = 'green';
+    title = 'Adequate response — continue current strategy';
+    msg = 'Continue the current fluid restriction and monitor serum Na daily until stable, then at longer intervals. Re-evaluate if the rate of rise slows or symptoms recur.';
+  } else if (d <= MAX_CORRECTION) {
+    cls = 'yellow';
+    title = 'Approaching the safe upper limit';
+    msg = 'A rise of ' + d + ' ' + unitNa + '/24 h is near the maximum recommended correction rate. Slow the correction — consider relaxing the restriction slightly and monitor Na every 4–6 h.';
+  } else {
+    cls = 'red';
+    title = '⚠️ Overcorrection — risk of osmotic demyelination';
+    msg = 'A rise of > 10 ' + unitNa + '/24 h carries a risk of osmotic demyelination. Stop active correction, consider free-water replacement (oral water or 5% dextrose) ± desmopressin, and monitor Na closely.';
+  }
+
+  if (cum !== null && !isNaN(cum) && cum > MAX_CORRECTION) {
+    msg += ' <strong>Cumulative rise since presentation is ' + cum.toFixed(1) + ' ' + unitNa + ', which exceeds the 24 h limit — review the whole correction curve, not just the last 24 h.</strong>';
+    if (cls === 'green') cls = 'yellow';
+  }
+
+  const c = tag('div', { class: 'card' });
+  const box = tag('div', { class: 'outcome ' + cls, role: cls === 'red' ? 'alert' : 'status' });
+  const h4 = tag('h4'); h4.innerHTML = title;
+  const p = tag('p'); p.innerHTML = msg;
+  box.appendChild(h4); box.appendChild(p);
+  c.appendChild(box);
+
+  const note = tag('div', { class: 'note' });
+  note.style.marginTop = '1rem';
+  note.innerHTML = '<strong>Always remember</strong>';
+  const ul = tag('ul', { class: 'plain' });
+  ul.style.marginTop = '0.5rem';
+  [
+    'Treat the underlying cause (drugs, malignancy, pulmonary disease, CNS pathology).',
+    'Stop ADH-stimulating drugs where possible.',
+    'Monitor for overcorrection — target 4–6 ' + unitNa + '/day, max 8–10 ' + unitNa + '/24 h.',
+    'If overcorrection occurs, a desmopressin clamp (1–2 µg IV/SC every 6–8 h) plus free-water replacement is the safest corrective strategy.',
+    'Isotonic (0.9%) saline is not indicated in SIAD and may worsen hyponatremia.'
+  ].forEach(t => { const li = tag('li', { text: t }); ul.appendChild(li); });
+  note.appendChild(ul);
+  c.appendChild(note);
+
+  const row = tag('div', { class: 'btn-row' });
+  const toTh = tag('button', { class: 'btn btn-primary', id: 'mg-to-therapy2', text: 'View second-line therapy →' });
+  toTh.addEventListener('click', () => goToTab('therapy'));
+  row.appendChild(toTh);
+  const rb = tag('button', { class: 'btn btn-ghost', id: 'mg-restart', text: 'Restart algorithm' });
+  rb.addEventListener('click', mgmtReset);
+  row.appendChild(rb);
+  c.appendChild(row);
+
+  card.appendChild(c);
+}
+
+/* ============================================================
+   SUMMARY / COPY / PRINT
+============================================================ */
+function diagSummaryText() {
+  const lines = ['SIADH — Diagnostic algorithm (' + U().short + ' units)', ''];
+  for (let i = 0; i < diagState.index; i++) {
+    const g = DIAG_GATES[i];
+    const ans = diagState.answers[g.id];
+    if (ans === undefined || ans === null) continue;
+    lines.push('• ' + diagSummarize(g, ans));
+  }
+  if (diagState.stopped) {
+    lines.push('');
+    lines.push(diagState.stopped.title);
+    lines.push(diagState.stopped.msg);
+  }
+  lines.push('');
+  lines.push('Generated by the SIADH Algorithm tool — educational use only.');
+  return lines.join('\n');
+}
+
+function mgmtSummaryText() {
+  const lines = ['SIADH — Management algorithm (' + U().short + ' units)', ''];
+  mgmtState.trail.forEach(t => lines.push('• ' + t));
+  if (mgmtState.furst) {
+    lines.push('');
+    lines.push('Furst ratio: ' + mgmtState.furst.ratio.toFixed(2));
+    lines.push('Fluid restriction target: ' + mgmtState.furst.target);
+    lines.push(mgmtState.furst.note);
+    lines.push(mgmtState.furst.actions);
+    lines.push('');
+    lines.push('Fluid restriction volumes:');
+    lines.push('  • Ratio < 0.5       → ~1000 mL/day');
+    lines.push('  • Ratio 0.5–1.0     → ~500 mL/day');
+    lines.push('  • Ratio > 1.0       → ~0 mL/day (not practical)');
+    lines.push('  • Alternative rule  → 24-h urine output − 500 mL');
+    if (mgmtState.urineOutput !== null) {
+      const calc = urineRuleMl(mgmtState.urineOutput);
+      if (calc && calc.applicable) {
+        lines.push('');
+        lines.push('This patient: 24-h urine output = ' + mgmtState.urineOutput + ' mL');
+        lines.push('  → urine-volume rule target = ' + calc.value + ' mL/day');
+      }
+    }
+  }
+  if (mgmtState.startNa !== null && mgmtState.currentNa !== null) {
+    lines.push('');
+    lines.push('Starting Na: ' + mgmtState.startNa + ' ' + U().na);
+    lines.push('Current Na: ' + mgmtState.currentNa + ' ' + U().na);
+    lines.push('Cumulative rise: ' + (mgmtState.currentNa - mgmtState.startNa).toFixed(1) + ' ' + U().na);
+    lines.push('24 h delta: ' + mgmtState.delta + ' ' + U().na);
+  }
+  lines.push('');
+  lines.push('Generated by the SIADH Algorithm tool — educational use only.');
+  return lines.join('\n');
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => toast('Summary copied to clipboard.'),
+      () => fallbackCopy(text)
+    );
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px;';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); toast('Summary copied to clipboard.'); }
+  catch (e) { toast('Copy failed — please select and copy manually.'); }
+  ta.remove();
+}
+
+el('diag-copy').addEventListener('click', () => copyToClipboard(diagSummaryText()));
+el('mgmt-copy').addEventListener('click', () => copyToClipboard(mgmtSummaryText()));
+el('diag-print').addEventListener('click', () => window.print());
+el('mgmt-print').addEventListener('click', () => window.print());
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const active = document.querySelector('.tab.active');
+  if (!active) return;
+  if (active.dataset.tab === 'diag') diagReset();
+  if (active.dataset.tab === 'mgmt') mgmtReset();
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+setUnitSystem(unitState.system);
+renderDiag();
+renderMgmt();
+</script>
+</body>
+</html>
